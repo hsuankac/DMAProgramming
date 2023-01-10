@@ -1,0 +1,23 @@
+#include "stm32f446xx.h"
+
+void clear_exti_pending_bit(void);
+
+
+void clear_exti_pending_bit(void)
+{
+	EXTI_TypeDef *pEXTI = EXTI;
+
+	// Clear the pending bit
+	if(pEXTI->PR & (1 << 13))
+	{
+		pEXTI->PR |= (1 << 13);
+	}
+
+}
+
+// IRQ handler for the button interrupt
+void EXTI15_10_IRQHandler(void)
+{
+	// Here we will send USART2_TX DMA request to DMA1 controller
+	clear_exti_pending_bit();
+}

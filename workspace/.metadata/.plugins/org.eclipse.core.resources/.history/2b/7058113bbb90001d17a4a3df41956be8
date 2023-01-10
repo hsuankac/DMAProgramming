@@ -1,6 +1,0 @@
-
-// IRQ handler for the button interrupt
-void EXTI15_10_IRQHandler(void)
-{
-
-}

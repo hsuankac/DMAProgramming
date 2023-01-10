@@ -1,0 +1,224 @@
+#include <stdint.h>
+#include "stm32f446xx.h"
+
+void button_init(void);
+void uart2_init(void);
+void dma1_init(void);
+void send_some_data(void);
+void enable_dma1_stream6(void);
+void dma1_interrupt_configuration(void);
+void HT_Complete_callback(void);
+void FT_Complete_callback(void);
+void TE_error_callback(void);
+void FE_error_callback(void);
+
+char data_stream[] = "Hello World\r\n";
+
+int main(void)
+{
+	button_init();
+	uart2_init();
+	dma1_init();
+	dma1_interrupt_configuration();
+	enable_dma1_stream6();
+
+	while(1);
+
+	return 0;
+
+}
+
+void send_some_data(void)
+{
+	USART_TypeDef *pUART2 = USART2;
+	char somedata[] = "Hello World\r\n";
+
+	//make sure that in the status register TXE bit is set
+	// if TXE is i, put the byte
+
+	uint32_t len = sizeof(somedata);
+
+	for(uint32_t i = 0; i < len; i ++)
+	{
+		while(!(pUART2->SR & (1 << 7)));
+		pUART2->DR = somedata[i];
+	}
+}
+
+void button_init(void)
+{
+	// Button is connected to PC 13
+	GPIO_TypeDef *pGPIOC = GPIOC;
+	RCC_TypeDef *pRCC = RCC;
+	EXTI_TypeDef *pEXTI = EXTI;
+	SYSCFG_TypeDef *pSYSCFG = SYSCFG;
+
+	// Enable the peripheral clock for the GPIOC peripheral
+	pRCC->AHB1ENR |= (1 << 2);
+
+	// Keep the GPIO pin in input modes
+	pGPIOC->MODER &= ~(0x3 << 26);
+
+	// Enable the interrupt over that GPIO pin
+	pEXTI->IMR |= (1 << 13);
+
+	// Enable the peripheral clock for the SYSCFG peripheral
+	pRCC->APB2ENR |= (1 << 14);
+
+	// Configuring the SYSCFG control register
+	pSYSCFG->EXTICR[3] &= ~(0xf << 4); //clearing
+	pSYSCFG->EXTICR[3] |= (0x2 << 4); // setting
+
+	// Configure the edge detection on that GPIO pin
+	pEXTI->FTSR |= (1 << 13);
+
+	// Enable the IRQ related to that GPIO pin in NVIC of the processor
+	NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+
+
+void uart2_init(void)
+{
+	RCC_TypeDef *pRCC = RCC;
+	GPIO_TypeDef *pGPIOA = GPIOA;
+	USART_TypeDef *pUART2 = USART2;
+
+	// Enable the peripheral clock for the UART2 peripheral
+	pRCC->APB1ENR |= (1 << 17);
+
+	// Configure the GPIO pins for uart_tx and uart_rx function PA2 as TX, PA3 as RX
+	// first configure PA2 as UART2 TX
+	// Enable clock for the GPIOA peripheral
+	pRCC->AHB1ENR |= (1 << 0);
+
+	// Change the mode of the PA2 to alternate function mode
+	pGPIOA->MODER &= ~(0X3 << 4);
+	pGPIOA->MODER |= (0X2 << 4);
+	pGPIOA->AFR[0] &= ~(0Xf << 8);
+	pGPIOA->AFR[0] |= (0X7 << 8);
+
+	// Enable pull-up resistor
+	pGPIOA->PUPDR |= (0X1 << 4);
+
+	// Configure PA3 as UART2 RX
+	// Change the mode of the PA3 to alternate function mode
+	pGPIOA->MODER &= ~(0X3 << 6);
+	pGPIOA->MODER |= (0X2 << 6);
+	pGPIOA->AFR[0] &= ~(0Xf << 12);
+	pGPIOA->AFR[0] |= (0X7 << 12);
+
+	// Enable pull-up resistor
+	pGPIOA->PUPDR |= (0X1 << 6);
+
+	// Configure the baudrate
+	pUART2->BRR  = 0x8B;
+
+	// Configure the data width, no of stop bits, etc, we use all the default value
+	// Enable the TX engine of the uart peripheral
+	pUART2->CR1 |= (1 << 3);
+
+	// Enable the uart peripheral
+	pUART2->CR1 |= (1 << 13);
+}
+
+
+void dma1_init(void)
+{
+	RCC_TypeDef *pRCC = RCC;
+	DMA_TypeDef *pDMA = DMA1;
+	DMA_Stream_TypeDef *pSTREAM6 = DMA1_Stream6;
+	USART_TypeDef *pUART2 = USART2;
+
+	// Enable the peripheral clock for the dma1
+	pRCC->AHB1ENR |= (1 << 21);
+
+	// Identify the streams which is suitable for your peripheral
+	// Identify the channel number on which uart2 peripheral sends dma request
+	// -> channel 4 stream 6
+	pSTREAM6->CR &= ~(0x7 << 25);
+	pSTREAM6->CR |= (0x4 << 25);
+
+	// Program the source address (memory)
+	pSTREAM6->M0AR = (uint32_t) data_stream;
+
+	// Program the destination address
+	pSTREAM6->PAR = (uint32_t) &pUART2->DR;
+
+	// Program number of data items to send
+	uint32_t len = sizeof(data_stream);
+	pSTREAM6->NDTR = len;
+
+	// The direction of data transfer
+	pSTREAM6->CR |= (0x1 << 6);
+
+	// Program the source and destination data width
+	pSTREAM6->CR &= ~(0x3 << 13);
+	pSTREAM6->CR &= ~(0x3 << 11);
+
+	// Enable memory auto increment
+	pSTREAM6->CR |= (1 << 10);
+
+	// Direct mode or fifo mode
+	pSTREAM6->FCR |= (1 << 2);
+
+	// select the fifo threshold
+	pSTREAM6->FCR &= ~(0x3 << 0);
+	pSTREAM6->FCR |= (0x3 << 0);
+
+	// enable the circular mode if required
+
+	// single transfer or burst transfer
+
+	// Configure the stream priority
+
+}
+
+void enable_dma1_stream6(void)
+{
+	DMA_Stream_TypeDef *pSTREAM6 = DMA1_Stream6;
+	// Enable the stream
+	pSTREAM6->CR |= (1 << 0);
+}
+
+void dma1_interrupt_configuration(void)
+{
+	DMA_Stream_TypeDef *pSTREAM6 = DMA1_Stream6;
+	// Half transfer IE (HTIE)
+	pSTREAM6->CR |= (1 << 3);
+
+	// Transfer complete IE (TCIE)
+	pSTREAM6->CR |= (1 << 4);
+
+	// Transfer error IE (TEIE)
+	pSTREAM6->CR |= (1 << 2);
+
+	// FIFO overrun/underrun IE (FEIE)
+	pSTREAM6->FCR |= (1 << 7);
+
+	// Direct mode error (DMEIE)
+	pSTREAM6->CR |= (1 << 1);
+
+	// Enable the IRQ for DMA1 stream6 global interrupt in NVIC
+	NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+}
+
+void HT_Complete_callback(void)
+{
+
+}
+
+void FT_Complete_callback(void)
+{
+
+}
+
+void TE_error_callback(void)
+{
+
+}
+
+void FE_error_callback(void)
+{
+
+}
+

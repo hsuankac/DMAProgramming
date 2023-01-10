@@ -1,0 +1,58 @@
+#include "stm32f446xx.h"
+
+extern void HT_Complete_callback(void);
+extern void FT_Complete_callback(void);
+extern void TE_error_callback(void);
+extern void FE_error_callback(void);
+extern void DME_error_callback(void);
+void clear_exti_pending_bit(void);
+
+
+void clear_exti_pending_bit(void)
+{
+	EXTI_TypeDef *pEXTI = EXTI;
+
+	// Clear the pending bit
+	if(pEXTI->PR & (1 << 13))
+	{
+		pEXTI->PR |= (1 << 13);
+	}
+
+}
+
+// IRQ handler for the button interrupt
+void EXTI15_10_IRQHandler(void)
+{
+	USART_TypeDef *pUART2 = USART2;
+	// Here we will send USART2_TX DMA request to DMA1 controller
+	pUART2->CR3 |= (1 << 7);
+
+	clear_exti_pending_bit();
+}
+
+// IRQ handler for DMA1 stram6 global interrupt
+
+#define is_it_HT()	0
+#define is_it_HT()	0
+#define is_it_HT()	0
+#define is_it_HT()	0
+#define is_it_HT()	0
+
+void DMA1_Stream6_IRQHandler(void)
+{
+	// Half-transfer
+	if(is_it_HT())
+	{
+		HT_Complete_callback();
+	}else if(is_it_FT())
+	{
+		FT_Complete_callback();
+	}else if(is_it_TE())
+	{
+		TE_error_callback();
+	}else if(is_it_FE())
+	{
+		FE_error_callback();
+	}
+
+}
