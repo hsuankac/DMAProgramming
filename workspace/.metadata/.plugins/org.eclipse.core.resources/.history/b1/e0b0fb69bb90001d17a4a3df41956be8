@@ -1,0 +1,13 @@
+#include "stm32f446xx.h"
+
+
+void clear_exti_pending_bit(void)
+{
+
+}
+
+// IRQ handler for the button interrupt
+void EXTI15_10_IRQHandler(void)
+{
+	clear_exti_pending_bit();
+}

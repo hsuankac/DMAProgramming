@@ -1,0 +1,6 @@
+
+// IRQ handler for the button interrupt
+void EXTI15_10_IRQHandler(void)
+{
+	clear_exti_pending_bit();
+}

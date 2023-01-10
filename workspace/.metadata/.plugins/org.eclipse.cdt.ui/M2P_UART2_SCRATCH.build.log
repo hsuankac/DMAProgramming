@@ -1,0 +1,17 @@
+00:00:15 **** Incremental Build of configuration Debug for project M2P_UART2_SCRATCH ****
+make -j7 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F446xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "M2P_UART2_SCRATCH.elf" @"objects.list"   -mcpu=cortex-m4 -T"/Users/kaichang/Desktop/git/DMAProgramming/workspace/M2P_UART2_SCRATCH/STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="M2P_UART2_SCRATCH.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: M2P_UART2_SCRATCH.elf
+ 
+arm-none-eabi-size   M2P_UART2_SCRATCH.elf 
+arm-none-eabi-objdump -h -S  M2P_UART2_SCRATCH.elf  > "M2P_UART2_SCRATCH.list"
+   text	   data	    bss	    dec	    hex	filename
+   1040	      8	   1568	   2616	    a38	M2P_UART2_SCRATCH.elf
+Finished building: default.size.stdout
+ 
+Finished building: M2P_UART2_SCRATCH.list
+ 
+
+00:00:16 Build Finished. 0 errors, 0 warnings. (took 655ms)
+

@@ -1,0 +1,44 @@
+#include <stdint.h>
+#include "stm32f446xx.h"
+
+void button_init(void);
+void uart2_init(void);
+void dma1_init(void);
+
+
+int main(void)
+{
+	button_init();
+	uart2_init();
+	dma1_init();
+	return 0;
+
+}
+
+void button_init(void)
+{
+	// Button is connected to PC 13
+
+	// 1. Enable the peripheral clock for the GPIOC peripheral
+
+	// 2. Keep the GPIO pin in input mode
+
+	// 3. Configure the edge detection on that GPIO pin
+
+	// 4. Enable the interrupt over that GPIO pin
+
+
+}
+
+
+void uart2_init(void)
+{
+
+}
+
+
+void dma1_init(void)
+{
+
+}
+
